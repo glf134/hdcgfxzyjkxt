@@ -34,6 +34,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { VitalSignsModal } from './VitalSignsView';
 import { PersonnelArchiveModal } from './PersonnelArchiveView';
 import { HelmetMonitoringModal } from './HelmetMonitoringView';
+import { PersonnelPositioningModal } from './PersonnelPositioningView';
 import { 
   BarChart, 
   Bar, 
@@ -157,6 +158,7 @@ export const DashboardView: React.FC = () => {
   
   const [showVitalSigns, setShowVitalSigns] = useState(false);
   const [showHelmetMonitoring, setShowHelmetMonitoring] = useState(false);
+  const [showPersonnelPositioning, setShowPersonnelPositioning] = useState(false);
   const [showPersonArchive, setShowPersonArchive] = useState<string | null>(null);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -686,7 +688,7 @@ export const DashboardView: React.FC = () => {
              <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-[2rem] p-2 py-4 flex flex-col gap-4 shadow-2xl items-center min-w-[70px]">
                 <ActionBtn icon={Activity} label="人员生命体征" onClick={() => setShowVitalSigns(true)} />
                 <ActionBtn icon={HardHat} label="安全帽" onClick={() => setShowHelmetMonitoring(true)} />
-                <ActionBtn icon={MapPin} label="3D人员定位" />
+                <ActionBtn icon={MapPin} label="3D人员定位" onClick={() => setShowPersonnelPositioning(true)} />
              </div>
           </motion.div>
 
@@ -709,6 +711,12 @@ export const DashboardView: React.FC = () => {
               <HelmetMonitoringModal 
                 key="helmet-monitoring-modal"
                 onClose={() => setShowHelmetMonitoring(false)}
+              />
+            )}
+            {showPersonnelPositioning && (
+              <PersonnelPositioningModal 
+                key="personnel-positioning-modal"
+                onClose={() => setShowPersonnelPositioning(false)}
               />
             )}
           </AnimatePresence>
