@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Google AI Studio App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Safeguard against libraries trying to overwrite readonly fetch property on window
+      (function() {
+        if (typeof window !== 'undefined') {
+          if (!window.global) { window.global = window; }
+          if (typeof FormData !== 'undefined' && !FormData.prototype.keys) {
+            FormData.prototype.keys = function*() { for (var k in this) yield k; };
+          }
+          try {
+            var originalFetch = window.fetch;
+            Object.defineProperty(window, 'fetch', {
+              get: function() { return originalFetch; },
+              set: function() { console.warn('Ignored attempt to overwrite window.fetch'); },
+              configurable: true,
+              enumerable: true
+            });
+          } catch (e) {}
+        }
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
