@@ -219,9 +219,11 @@ export const DashboardView: React.FC = () => {
                   <table className="w-full text-left text-[11px]">
                      <thead className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 z-10 text-slate-400 font-bold uppercase tracking-widest px-5">
                         <tr>
-                           <th className="px-5 py-3 font-medium">单号/负责人</th>
+                           <th className="px-5 py-3 font-medium">单号/人</th>
+                           <th className="px-1 py-3 font-medium">类型/区域</th>
+                           <th className="px-1 py-3 font-medium">内容</th>
                            <th className="px-1 py-3 font-medium">时间</th>
-                           <th className="px-1 py-3 font-medium text-right">状态</th>
+                           <th className="px-5 py-3 font-medium text-right">状态</th>
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
@@ -235,9 +237,19 @@ export const DashboardView: React.FC = () => {
                                  <div className="font-bold text-slate-800 dark:text-slate-200 tracking-tight">{job.id}</div>
                                  <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{job.manager}</div>
                               </td>
-                              <td className="px-1 py-3.5 text-slate-400 font-mono tracking-tighter whitespace-nowrap">{job.date.slice(5)}</td>
+                              <td className="px-1 py-3.5">
+                                 <div className="text-slate-700 dark:text-slate-300 font-bold">{job.type}</div>
+                                 <div className="text-[9px] text-slate-400 dark:text-slate-500">{job.location}</div>
+                              </td>
+                              <td className="px-1 py-3.5">
+                                 <div className="text-slate-500 dark:text-slate-400 max-w-[80px] truncate">{job.content || '无详细内容'}</div>
+                              </td>
+                              <td className="px-1 py-3.5 text-slate-400 font-mono tracking-tighter whitespace-nowrap">
+                                 <div>{job.date.slice(5)}</div>
+                                 <div className="text-[9px]">{job.timeRange.split('~')[0]}</div>
+                              </td>
                               <td className="px-5 py-3.5 text-right">
-                                 <span className={`px-1.5 py-0.5 rounded font-bold text-[10px] ${
+                                 <span className={`px-1 py-0.5 rounded font-bold text-[9px] ${
                                     job.status === 'ongoing' ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600' :
                                     job.status === 'finished' ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : 
                                     job.status === 'wait_audit' ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : 'bg-red-50 dark:bg-red-500/10 text-red-500'
@@ -304,7 +316,6 @@ export const DashboardView: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-md text-[9px] font-black border border-blue-200 dark:border-blue-800">动火作业</span>
                     <span className="px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-md text-[9px] font-black border border-emerald-200 dark:border-emerald-800">受限空间</span>
                   </div>
 
@@ -532,7 +543,7 @@ export const DashboardView: React.FC = () => {
                      <div className="flex items-center justify-between mb-2 shrink-0">
                         <div className="flex items-center gap-1">
                            <LayoutDashboard size={12} className="text-orange-500" />
-                           <h3 className="text-[9px] font-black text-slate-800 dark:text-white uppercase tracking-tight">状态监控</h3>
+                           <h3 className="text-[11px] font-black text-slate-800 dark:text-white uppercase tracking-tight">节点详情</h3>
                         </div>
                         <div className="px-1 px-0.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[7px] text-slate-400 font-bold">
                            CORE
@@ -567,7 +578,7 @@ export const DashboardView: React.FC = () => {
                           className={`flex items-center gap-1 pb-1 transition-all relative ${activeBottomTab === 'alarm' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
                         >
                            <Bell size={10} className={activeBottomTab === 'alarm' ? 'text-blue-600' : 'text-slate-400'} />
-                           <h3 className="text-[9px] font-black uppercase tracking-tight">告警</h3>
+                           <h3 className="text-[11px] font-black uppercase tracking-tight">告警</h3>
                            {activeBottomTab === 'alarm' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />}
                         </button>
                         <button 
@@ -575,7 +586,7 @@ export const DashboardView: React.FC = () => {
                           className={`flex items-center gap-1 pb-1 transition-all relative ${activeBottomTab === 'gas' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
                         >
                            <Activity size={10} className={activeBottomTab === 'gas' ? 'text-blue-600' : 'text-slate-400'} />
-                           <h3 className="text-[9px] font-black uppercase tracking-tight">气体</h3>
+                           <h3 className="text-[11px] font-black uppercase tracking-tight">气体</h3>
                            {activeBottomTab === 'gas' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />}
                         </button>
                      </div>
