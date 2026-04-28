@@ -31,6 +31,9 @@ import {
   FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { VitalSignsModal } from './VitalSignsView';
+import { PersonnelArchiveModal } from './PersonnelArchiveView';
+import { HelmetMonitoringModal } from './HelmetMonitoringView';
 import { 
   BarChart, 
   Bar, 
@@ -69,12 +72,12 @@ const MOCK_JOBS: JobTicket[] = [
 ];
 
 const AREA_STATS_DATA = [
-  { name: '#1锅炉房', 重大: 5, 较大: 2, 一般: 8, 低: 15 },
-  { name: '#机房周转层', 重大: 2, 较大: 1, 一般: 5, 低: 20 },
-  { name: '输煤栈桥', 重大: 3, 较大: 2, 一般: 6, 低: 10 },
-  { name: '升压站区域', 重大: 1, 较大: 1, 一般: 4, 低: 12 },
-  { name: '化水车间', 重大: 0, 较大: 2, 一般: 8, 低: 15 },
-  { name: '脱硫区域', 重大: 2, 较大: 3, 一般: 7, 低: 12 },
+  { name: '#1锅炉房', count: 12 },
+  { name: '#机房周转层', count: 28 },
+  { name: '输煤栈桥', count: 15 },
+  { name: '升压站区域', count: 8 },
+  { name: '化水车间', count: 22 },
+  { name: '脱硫区域', count: 10 },
 ];
 
 const MOCK_GAS_DATA = Array.from({ length: 20 }, (_, i) => ({
@@ -118,13 +121,7 @@ const Header = ({ jobId }: { jobId: string }) => {
                     <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tabular-nums">{now.toTimeString().split(' ')[0]}</span>
                 </div>
 
-                <div 
-                  className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 group transition-all border border-blue-100 dark:border-blue-800/50"
-                >
-                    <span className="text-xs font-black">查看原件</span>
-                    <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-                </div>
-
+            <div className="flex items-center gap-4 px-3 border-l border-slate-100 dark:border-slate-800 ml-2">
                 <div className="flex items-center gap-2">
                     <button onClick={toggleTheme} className="p-2 text-slate-400 dark:text-slate-500 hover:text-blue-500 transition-colors bg-white dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm">
                         {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
@@ -140,13 +137,28 @@ const Header = ({ jobId }: { jobId: string }) => {
                         <LayoutGrid size={18} />
                     </div>
                 </div>
+
+                <div 
+                  onClick={() => navigate('/')}
+                  className="p-2 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-800/50 shadow-sm cursor-pointer group"
+                  title="退出登录"
+                >
+                    <LogOut size={18} className="group-hover:translate-x-0.5 transition-transform" />
+                </div>
+            </div>
             </div>
         </header>
     );
 };
 
 export const DashboardView: React.FC = () => {
+  const navigate = useNavigate();
   const { theme } = useTheme();
+  
+  const [showVitalSigns, setShowVitalSigns] = useState(false);
+  const [showHelmetMonitoring, setShowHelmetMonitoring] = useState(false);
+  const [showPersonArchive, setShowPersonArchive] = useState<string | null>(null);
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState('WP-2024-001');
   const [videoGridMode, setVideoGridMode] = useState<2 | 4>(2);
@@ -167,12 +179,12 @@ export const DashboardView: React.FC = () => {
               <RowHeader title="区域作业统计" icon={Scaling} extra={<LayoutGrid size={14} className="text-slate-300 dark:text-slate-600 cursor-pointer" />} />
               <div className="grid grid-cols-4 gap-2 mb-6">
                 {[
-                  { label: '重大', val: 5, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-500/10' },
-                  { label: '较大', val: 4, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-500/10' },
-                  { label: '一般', val: 24, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-500/10' },
-                  { label: '低', val: 42, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-500/10' }
+                  { label: '今日总数', val: 128, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+                  { label: '动火', val: 32, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20' },
+                  { label: '高空', val: 45, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+                  { label: '有限空间', val: 21, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' }
                 ].map(stat => (
-                  <div key={stat.label} className={`${stat.bg} ${stat.color} p-2.5 rounded-xl border border-slate-50 dark:border-transparent flex flex-col items-center justify-center`}>
+                  <div key={`stat-${stat.label}`} className={`${stat.bg} ${stat.color} p-2.5 rounded-xl border border-slate-50 dark:border-transparent flex flex-col items-center justify-center`}>
                     <span className="text-xl font-black leading-none mb-1">{stat.val}</span>
                     <span className="text-[10px] opacity-70 font-bold">{stat.label}</span>
                   </div>
@@ -180,13 +192,14 @@ export const DashboardView: React.FC = () => {
               </div>
               <div className="h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={AREA_STATS_DATA} layout="vertical" barSize={10} margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
+                  <BarChart data={AREA_STATS_DATA} layout="vertical" barSize={10} margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
                     <XAxis type="number" hide />
                     <YAxis dataKey="name" type="category" width={90} tick={{ fontSize: 10, fill: theme === 'dark' ? '#475569' : '#94a3b8' }} axisLine={false} tickLine={false} />
-                    <Bar dataKey="重大" stackId="a" fill="#ef4444" radius={[2, 0, 0, 2]} />
-                    <Bar dataKey="较大" stackId="a" fill="#f97316" />
-                    <Bar dataKey="一般" stackId="a" fill="#3b82f6" />
-                    <Bar dataKey="低" stackId="a" fill="#10b981" radius={[0, 2, 2, 0]} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '10px', fontWeight: 'bold' }}
+                      cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
+                    />
+                    <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -365,7 +378,7 @@ export const DashboardView: React.FC = () => {
                         { t: '火灾风险', d: '油站区域易燃润滑油积聚，遇火花极易引发事故，严禁违规动火。' },
                         { t: '机械伤害', d: '转动部件及联锁动力若未物理断路，存在设备意外启动卷入风险。' }
                       ].map(item => (
-                        <div key={item.t} className="relative pl-3">
+                        <div key={`risk-${item.t}`} className="relative pl-3">
                           <div className="absolute left-0 top-1.5 w-1 h-1 bg-red-500 rounded-full" />
                           <p className="text-[10px] font-black text-red-600 mb-0.5 leading-none">{item.t}</p>
                           <p className="text-[9px] text-slate-500 dark:text-slate-400 leading-tight line-clamp-3">{item.d}</p>
@@ -388,7 +401,7 @@ export const DashboardView: React.FC = () => {
                         { t: '消防管控', d: '动火点配防火毯及4具灭火器，动火监护人需巡逻确认环境安全。' },
                         { t: '气体监测', d: '作业期间每2小时进行一次气体复测并在监控仪显示实时数据对比。' }
                       ].map(item => (
-                        <div key={item.t} className="relative pl-3">
+                        <div key={`measure-${item.t}`} className="relative pl-3">
                           <div className="absolute left-0 top-1.5 w-1 h-1 bg-emerald-500 rounded-full" />
                           <p className="text-[10px] font-black text-emerald-600 mb-0.5 leading-none">{item.t}</p>
                           <p className="text-[9px] text-slate-500 dark:text-slate-400 leading-tight line-clamp-3">{item.d}</p>
@@ -421,7 +434,7 @@ export const DashboardView: React.FC = () => {
                     </div>
                     <div className={`grid gap-2 flex-1 ${videoGridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-2'}`}>
                        {[1, 2, 3, 4].slice(0, videoGridMode).map(i => (
-                         <div key={i} className="relative bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800 group/video aspect-video">
+                         <div key={`video-${i}`} className="relative bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800 group/video aspect-video">
                             <img 
                               src={`https://images.unsplash.com/photo-1517089591965-c96301389474?w=800&q=80&idx=${i}`} 
                               className="w-full h-full object-cover opacity-60 transition-transform duration-[5s]" 
@@ -453,7 +466,7 @@ export const DashboardView: React.FC = () => {
                      </div>
                      <div className="flex-1 flex items-center gap-1.5 px-2 overflow-x-auto no-scrollbar">
                         {['监测仪', '安全带', '摄像头'].map((label, idx) => (
-                          <div key={idx} className="flex items-center gap-1 px-1.5 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded hover:border-blue-500/40 transition-all cursor-pointer whitespace-nowrap group">
+                          <div key={`hw-${idx}`} className="flex items-center gap-1 px-1.5 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded hover:border-blue-500/40 transition-all cursor-pointer whitespace-nowrap group">
                              <Tag size={8} className="text-emerald-500"/>
                              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{label}</span>
                           </div>
@@ -468,7 +481,7 @@ export const DashboardView: React.FC = () => {
                      </div>
                      <div className="flex-1 flex items-center gap-1.5 px-2 overflow-x-auto no-scrollbar">
                         {['倒地检测', '违章识别', '自动预警'].map((label, idx) => (
-                          <div key={idx} className="flex items-center gap-1 px-1.5 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded hover:border-red-500/40 transition-all cursor-pointer whitespace-nowrap group">
+                          <div key={`ai-${idx}`} className="flex items-center gap-1 px-1.5 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded hover:border-red-500/40 transition-all cursor-pointer whitespace-nowrap group">
                              <Zap size={8} className="text-red-500"/>
                              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{label}</span>
                           </div>
@@ -491,7 +504,7 @@ export const DashboardView: React.FC = () => {
                            <span className="text-white font-black text-[11px] [writing-mode:vertical-lr] tracking-[0.05em]">作业前</span>
                         </div>
                         <div className="flex gap-2.5 p-2 px-3 border border-dashed border-purple-100 dark:border-purple-900/40 rounded-2xl bg-purple-50/5 transition-all">
-                           {['作业许可', '人员培训', '风险演练', '技术交底'].map(label => (
+                           {['作业许可', '人员培训', '风险演练', '安全管理文件'].map(label => (
                               <div key={label} className="w-14 h-14 rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-xl flex items-center justify-center text-center p-1 hover:scale-110 transition-transform cursor-default shrink-0 group">
                                  <span className="text-[10px] font-black text-purple-600 leading-tight group-hover:text-purple-500 transition-colors">{label}</span>
                               </div>
@@ -513,7 +526,7 @@ export const DashboardView: React.FC = () => {
                            </div>
                            <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-full flex flex-col items-center justify-center text-blue-600 dark:text-blue-400 shadow-xl border-2 border-blue-50 dark:border-blue-900/30 text-center p-1 relative z-10 group hover:scale-110 transition-transform">
                               <User size={16} />
-                              <span className="text-[10px] font-black leading-tight mt-1">管理人员</span>
+                              <span className="text-[8px] font-black leading-tight mt-1">管理人员到岗签到</span>
                            </div>
                         </div>
                      </div>
@@ -526,7 +539,7 @@ export const DashboardView: React.FC = () => {
                            <span className="text-white font-black text-[11px] [writing-mode:vertical-lr] tracking-[0.05em]">作业后</span>
                         </div>
                         <div className="flex gap-2.5 p-2 px-3 border border-dashed border-emerald-100 dark:border-emerald-900/40 rounded-2xl bg-emerald-50/5">
-                           {['闭环解报', '文件归档'].map(label => (
+                           {['作业结束', '反违章报告'].map(label => (
                               <div key={label} className="w-14 h-14 rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-xl flex items-center justify-center text-center p-1 hover:scale-110 transition-transform cursor-default shrink-0 group">
                                  <span className="text-[10px] font-black text-emerald-600 leading-tight group-hover:text-emerald-500 transition-colors">{label}</span>
                               </div>
@@ -557,7 +570,7 @@ export const DashboardView: React.FC = () => {
                            { t: '气体监测', d: '数据回传正常', icon: CheckCircle2, color: 'text-emerald-500' },
                            { t: '违章识别', d: '全量算法加载', icon: CheckCircle2, color: 'text-emerald-500' },
                         ].map((item, idx) => (
-                           <div key={idx} className="flex items-center gap-1.5 border-b border-slate-50 dark:border-slate-800/50 pb-1">
+                           <div key={`node-${idx}`} className="flex items-center gap-1.5 border-b border-slate-50 dark:border-slate-800/50 pb-1">
                               <div className={`p-0.5 rounded-full ${item.color} bg-opacity-10 shrink-0`}>
                                  <item.icon size={8} className={item.color} />
                               </div>
@@ -605,7 +618,7 @@ export const DashboardView: React.FC = () => {
                                   { t: '安全帽', time: '12:45', type: '异常', img: 'https://images.unsplash.com/photo-1579309196904-11d619d02a3a?w=100' },
                                   { t: '气体超标', time: '13:05', type: '预警', img: 'https://images.unsplash.com/photo-1517089591965-c96301389474?w=100' }
                                  ].map((alarm, idx) => (
-                                   <div key={idx} className="flex items-center justify-between p-1 bg-slate-50/50 dark:bg-slate-800/30 rounded-lg border border-slate-100 dark:border-slate-800 transition-all hover:bg-white dark:hover:bg-slate-800 group">
+                                   <div key={`alarm-${idx}`} className="flex items-center justify-between p-1 bg-slate-50/50 dark:bg-slate-800/30 rounded-lg border border-slate-100 dark:border-slate-800 transition-all hover:bg-white dark:hover:bg-slate-800 group">
                                       <div className="flex items-center gap-2">
                                          <div className="w-7 h-5 rounded border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0">
                                             <img src={alarm.img} className="w-full h-full object-cover" alt="alarm" />
@@ -633,7 +646,7 @@ export const DashboardView: React.FC = () => {
                                    { label: 'CH4', val: '0.05', unit: '%LEL', color: '#10b981', dataKey: 'ch4' },
                                    { label: 'H2S', val: '0.12', unit: 'ppm', color: '#3b82f6', dataKey: 'h2s' }
                                  ].map((gas) => (
-                                    <div key={gas.label} className="bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-1 border border-slate-100/50 dark:border-slate-800 flex flex-col h-full">
+                                    <div key={`gas-${gas.label}`} className="bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-1 border border-slate-100/50 dark:border-slate-800 flex flex-col h-full">
                                        <div className="flex justify-between items-baseline mb-0.5">
                                          <p className="text-[7px] font-bold text-slate-400">{gas.label}</p>
                                          <span className="text-[8px] font-black" style={{ color: gas.color }}>{gas.val}</span>
@@ -671,22 +684,45 @@ export const DashboardView: React.FC = () => {
             className="absolute right-4 top-1/2 -translate-y-1/2 z-40 cursor-grab active:cursor-grabbing"
           >
              <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-[2rem] p-2 py-4 flex flex-col gap-4 shadow-2xl items-center min-w-[70px]">
-                <ActionBtn icon={Activity} label="人员体征" />
-                <ActionBtn icon={HardHat} label="安全帽" />
+                <ActionBtn icon={Activity} label="人员生命体征" onClick={() => setShowVitalSigns(true)} />
+                <ActionBtn icon={HardHat} label="安全帽" onClick={() => setShowHelmetMonitoring(true)} />
                 <ActionBtn icon={MapPin} label="3D人员定位" />
              </div>
           </motion.div>
+
+          <AnimatePresence>
+            {showVitalSigns && (
+              <VitalSignsModal 
+                key="vital-signs-modal"
+                onClose={() => setShowVitalSigns(false)} 
+                onViewArchive={(id) => setShowPersonArchive(id)} 
+              />
+            )}
+            {showPersonArchive && (
+              <PersonnelArchiveModal 
+                key="personnel-archive-modal"
+                personId={showPersonArchive} 
+                onClose={() => setShowPersonArchive(null)} 
+              />
+            )}
+            {showHelmetMonitoring && (
+              <HelmetMonitoringModal 
+                key="helmet-monitoring-modal"
+                onClose={() => setShowHelmetMonitoring(false)}
+              />
+            )}
+          </AnimatePresence>
         </main>
       </div>
     </div>
   );
 };
 
-const ActionBtn = ({ icon: Icon, label }: any) => (
-  <div className="flex flex-col items-center gap-1 cursor-pointer group w-full px-1">
+const ActionBtn = ({ icon: Icon, label, onClick }: any) => (
+  <div onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer group w-full px-1 text-center">
     <div className="p-2 bg-white/50 dark:bg-slate-800/50 border border-white/50 dark:border-white/10 text-slate-500 dark:text-slate-400 group-hover:bg-blue-600 group-hover:text-white rounded-lg transition-all shadow-md active:scale-95">
        <Icon size={16} />
     </div>
-    <span className="text-[7px] font-black text-slate-500 dark:text-slate-400 group-hover:text-blue-600 transition-colors uppercase text-center leading-none mt-0.5">{label}</span>
+    <span className="text-[7px] font-black text-slate-500 dark:text-slate-400 group-hover:text-blue-600 transition-colors uppercase text-center leading-none mt-0.5 break-words max-w-[60px]">{label}</span>
   </div>
 );
