@@ -179,7 +179,7 @@ export const DashboardView: React.FC = () => {
   const [selectedJobId, setSelectedJobId] = useState('WP-2024-001');
   const [videoGridMode, setVideoGridMode] = useState<2 | 4>(2);
   const [activeBottomTab, setActiveBottomTab] = useState<'alarm' | 'gas'>('gas');
-  const [activeNode, setActiveNode] = useState<string | null>(null);
+  const [activeNode, setActiveNode] = useState<string | null>('人员培训');
 
   const renderNodeDetailContent = () => {
     if (!activeNode) return (
