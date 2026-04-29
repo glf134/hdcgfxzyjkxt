@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, User, Lock, ArrowRight, Zap } from 'lucide-react';
+import { ShieldCheck, User, Lock, ArrowRight, Zap, Moon, Sun } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useTheme } from '../context/ThemeContext';
 
 export const LoginView: React.FC = () => {
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('******');
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleLogin = (e: React.FormEvent) => {
@@ -25,12 +27,17 @@ export const LoginView: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-[420px] bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.4)] border border-white dark:border-slate-800 p-10 relative z-10"
       >
-        <div className="flex flex-col items-center mb-10">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200 dark:shadow-none mb-6">
-            <ShieldCheck size={32} className="text-white" />
+        <div className="flex flex-col items-center mb-10 relative">
+          <button 
+            onClick={toggleTheme} 
+            className="absolute -top-4 -right-4 p-2.5 text-slate-400 hover:text-blue-500 transition-colors bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm"
+          >
+            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+          </button>
+          <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-blue-500/20 mb-6">
+            <ShieldCheck size={40} className="text-white" />
           </div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">欢迎回来</h1>
-          <p className="text-slate-400 dark:text-slate-500 font-medium text-sm">火电厂高风险作业监控系统</p>
+          <p className="text-slate-900 dark:text-blue-400 font-black text-base lg:text-lg tracking-tighter uppercase text-center leading-tight">火电厂高风险作业监控系统</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
+  Shield,
   ShieldCheck, 
   AlertTriangle, 
   Activity, 
@@ -28,23 +29,36 @@ import {
   Layout as LayoutIcon,
   LayoutDashboard,
   LogOut,
-  FileText
+  FileText,
+  FileWarning
 } from 'lucide-react';
+import { 
+  ResponsiveContainer, 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip,
+  Legend,
+  BarChart, 
+  Bar, 
+  AreaChart,
+  Area
+} from 'recharts';
 import { motion, AnimatePresence } from 'motion/react';
+
+const GAS_TREND_DATA = [
+  { time: '10:00', ch4: 20, h2s: 15, co: 12, o2: 21 },
+  { time: '11:00', ch4: 22, h2s: 18, co: 15, o2: 20.5 },
+  { time: '12:00', ch4: 25, h2s: 20, co: 18, o2: 20 },
+  { time: '13:00', ch4: 23, h2s: 19, co: 16, o2: 20.2 },
+  { time: '14:00', ch4: 25, h2s: 20, co: 18, o2: 20 },
+];
 import { VitalSignsModal } from './VitalSignsView';
 import { PersonnelArchiveModal } from './PersonnelArchiveView';
 import { HelmetMonitoringModal } from './HelmetMonitoringView';
 import { PersonnelPositioningModal } from './PersonnelPositioningView';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  Tooltip
-} from 'recharts';
 import { useTheme } from '../context/ThemeContext';
 
 // --- Mock Data ---
@@ -164,7 +178,136 @@ export const DashboardView: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState('WP-2024-001');
   const [videoGridMode, setVideoGridMode] = useState<2 | 4>(2);
-  const [activeBottomTab, setActiveBottomTab] = useState<'alarm' | 'gas'>('alarm');
+  const [activeBottomTab, setActiveBottomTab] = useState<'alarm' | 'gas'>('gas');
+  const [activeNode, setActiveNode] = useState<string | null>(null);
+
+  const renderNodeDetailContent = () => {
+    if (!activeNode) return (
+      <div className="h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-700 opacity-50">
+        <LayoutDashboard size={40} className="mb-2" />
+        <span className="text-xs font-bold">请选择上方节点查看详情</span>
+      </div>
+    );
+
+    switch (activeNode) {
+      case '人员培训':
+        return (
+          <div className="space-y-2 overflow-y-auto pr-1">
+            {[
+              { name: '张三', unit: '维护二班', group: '锅炉组', role: '焊工', trained: true },
+              { name: '李四', unit: '维护二班', group: '锅炉组', role: '起重工', trained: true },
+              { name: '王五', unit: '安环部', group: '监护组', role: '监护人', trained: true },
+              { name: '赵六', unit: '外部单位', group: '施工组', role: '普工', trained: false },
+            ].map((p, i) => (
+              <div key={i} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-blue-500/30 transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                    <User size={14} className="text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-black text-slate-800 dark:text-slate-200">{p.name} <span className="text-[9px] font-bold text-slate-400">/ {p.role}</span></p>
+                    <p className="text-[9px] text-slate-400 font-medium">{p.unit} - {p.group}</p>
+                  </div>
+                </div>
+                <div className={`px-2 py-0.5 rounded text-[9px] font-black ${p.trained ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/10' : 'bg-red-50 text-red-600 dark:bg-red-900/10'}`}>
+                  {p.trained ? '已培训' : '未培训'}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      case '风险演练':
+        return (
+          <div className="grid grid-cols-1 gap-2">
+            {[
+              { title: '有限空间窒息应急模拟演练记录', type: 'DOCX', time: '2024-04-20' },
+              { title: '高处作业坠落现场处置演练表', type: 'PDF', time: '2024-04-18' },
+              { title: '演练现场音视频备份资料', type: 'MP4', time: '2024-04-20' },
+            ].map((f, i) => (
+              <div key={i} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-white dark:border-white/5 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all group">
+                <div className="flex items-center gap-3">
+                  <FileText size={16} className="text-slate-400 group-hover:text-blue-500" />
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-600">{f.title}</p>
+                    <p className="text-[9px] text-slate-400 font-medium">{f.time} · {f.type}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      case '安全管理文件':
+        return (
+          <div className="grid grid-cols-1 gap-2">
+            {[
+              { title: '三措两案：检修安全技术交底书', tag: '三措两案' },
+              { title: '1-5号炉区域应急管理响应方案', tag: '应急管理' },
+              { title: '锅炉内衬修复安全措施落实文件', tag: '安全措施' },
+            ].map((f, i) => (
+              <div key={i} className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3">
+                   <Shield size={16} className="text-emerald-500" />
+                   <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{f.title}</p>
+                </div>
+                <span className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[8px] font-black rounded">{f.tag}</span>
+              </div>
+            ))}
+          </div>
+        );
+      case '管理人员到岗签到':
+        return (
+          <div className="space-y-2">
+            {[
+              { name: '李主任', role: '部门经理', time: '08:15', status: '已签到' },
+              { name: '王专工', role: '技术主管', time: '08:22', status: '已签到' },
+              { name: '赵监护', role: '安全监察', time: '08:30', status: '已签到' },
+            ].map((p, i) => (
+              <div key={i} className="flex items-center gap-4 p-3 bg-white dark:bg-slate-800 border-l-4 border-blue-500 rounded-lg shadow-sm">
+                <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center shrink-0">
+                  <User size={18} className="text-slate-500" />
+                </div>
+                <div className="flex-1">
+                   <div className="flex justify-between items-center">
+                      <p className="text-[11px] font-black text-slate-800 dark:text-slate-100">{p.name}</p>
+                      <span className="text-[9px] text-blue-500 font-bold">{p.time}</span>
+                   </div>
+                   <p className="text-[9px] text-slate-400 font-medium">{p.role}</p>
+                </div>
+                <div className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[8px] font-black rounded uppercase tracking-tighter">
+                   {p.status}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      case '反违章报告':
+        return (
+          <div className="space-y-2">
+            {[
+              { id: 'REP-2024-001', type: '行为违章', level: '一般', time: '2024-04-20 14:30' },
+              { id: 'REP-2024-002', type: '管理违章', level: '低风险', time: '2024-04-19 09:12' },
+            ].map((r, i) => (
+              <div key={i} className="p-3 bg-red-50/10 border border-red-100 dark:border-red-900/30 rounded-xl flex items-center justify-between cursor-pointer hover:bg-red-50/20 transition-all">
+                <div className="flex gap-3 items-center">
+                   <FileWarning size={16} className="text-red-500" />
+                   <div>
+                      <p className="text-[11px] font-black text-slate-800 dark:text-slate-200">{r.id}</p>
+                      <p className="text-[9px] text-slate-400 font-medium">{r.type} · {r.time}</p>
+                   </div>
+                </div>
+                <span className="text-[9px] font-black text-red-600">{r.level}</span>
+              </div>
+            ))}
+          </div>
+        );
+      default:
+        return (
+          <div className="h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-700 opacity-50 italic">
+            <span className="text-[10px] font-bold">该节点暂无详请数据内容</span>
+          </div>
+        );
+    }
+  };
 
   const selectedJob = useMemo(() => MOCK_JOBS.find(j => j.id === selectedJobId) || MOCK_JOBS[0], [selectedJobId]);
 
@@ -310,7 +453,7 @@ export const DashboardView: React.FC = () => {
         {/* Main Content Area */}
         <main className="flex-1 overflow-hidden relative">
           <div className="h-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col transition-colors">
-            <div className="flex-1 overflow-hidden p-3 space-y-3 scroll-smooth no-scrollbar flex flex-col">
+            <div className="flex-1 overflow-y-auto p-3 space-y-4 scroll-smooth no-scrollbar flex flex-col">
                {/* Info Toolbar Bar */}
                <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-2 px-4 shadow-sm flex items-center gap-4 relative overflow-hidden transition-colors min-h-[56px] shrink-0">
                   <div className="absolute top-1 right-8 z-10 opacity-30 dark:opacity-10 transform rotate-[15deg] pointer-events-none select-none scale-50">
@@ -367,14 +510,14 @@ export const DashboardView: React.FC = () => {
                {/* Risk & Measures Grid */}
                <div className="grid grid-cols-12 gap-3 shrink-0">
                   {/* Risk Prediction Card */}
-                  <div className="col-span-12 lg:col-span-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 shadow-sm overflow-hidden min-h-[180px]">
-                    <div className="flex items-center gap-2 mb-2">
+                  <div className="col-span-12 lg:col-span-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm overflow-hidden min-h-[210px]">
+                    <div className="flex items-center gap-2 mb-3">
                       <div className="p-1.5 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-lg">
-                        <AlertTriangle size={14} />
+                        <AlertTriangle size={15} />
                       </div>
-                      <h3 className="text-[11px] font-black text-slate-800 dark:text-slate-100">风险提示</h3>
+                      <h3 className="text-[12px] font-black text-slate-800 dark:text-slate-100">风险提示</h3>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {[
                         { t: '中毒风险', d: '磨煤机内可能积聚一氧化碳等有害气体，作业前须强制通风测气。' },
                         { t: '火灾风险', d: '油站区域易燃润滑油积聚，遇火花极易引发事故，严禁违规动火。' },
@@ -382,22 +525,22 @@ export const DashboardView: React.FC = () => {
                       ].map(item => (
                         <div key={`risk-${item.t}`} className="relative pl-3">
                           <div className="absolute left-0 top-1.5 w-1 h-1 bg-red-500 rounded-full" />
-                          <p className="text-[10px] font-black text-red-600 mb-0.5 leading-none">{item.t}</p>
-                          <p className="text-[9px] text-slate-500 dark:text-slate-400 leading-tight line-clamp-3">{item.d}</p>
+                          <p className="text-[11px] font-black text-red-600 mb-0.5 leading-none">{item.t}</p>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight line-clamp-3">{item.d}</p>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Safety Measures Card */}
-                  <div className="col-span-12 lg:col-span-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 shadow-sm overflow-hidden min-h-[180px]">
-                    <div className="flex items-center gap-2 mb-2">
+                  <div className="col-span-12 lg:col-span-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm overflow-hidden min-h-[210px]">
+                    <div className="flex items-center gap-2 mb-3">
                       <div className="p-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 rounded-lg">
-                        <ShieldCheck size={14} />
+                        <ShieldCheck size={15} />
                       </div>
-                      <h3 className="text-[11px] font-black text-slate-800 dark:text-slate-100">安全措施</h3>
+                      <h3 className="text-[12px] font-black text-slate-800 dark:text-slate-100">安全措施</h3>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {[
                         { t: '能量隔离', d: '电力、机械动力电源必须执行LOTO双重落锁，物理切断源头动力。' },
                         { t: '消防管控', d: '动火点配防火毯及4具灭火器，动火监护人需巡逻确认环境安全。' },
@@ -405,8 +548,8 @@ export const DashboardView: React.FC = () => {
                       ].map(item => (
                         <div key={`measure-${item.t}`} className="relative pl-3">
                           <div className="absolute left-0 top-1.5 w-1 h-1 bg-emerald-500 rounded-full" />
-                          <p className="text-[10px] font-black text-emerald-600 mb-0.5 leading-none">{item.t}</p>
-                          <p className="text-[9px] text-slate-500 dark:text-slate-400 leading-tight line-clamp-3">{item.d}</p>
+                          <p className="text-[11px] font-black text-emerald-600 mb-0.5 leading-none">{item.t}</p>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight line-clamp-3">{item.d}</p>
                         </div>
                       ))}
                     </div>
@@ -467,7 +610,7 @@ export const DashboardView: React.FC = () => {
                         <span className="text-[12px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-tighter">智能硬件</span>
                      </div>
                      <div className="flex-1 flex items-center gap-1.5 px-2 overflow-x-auto no-scrollbar">
-                        {['监测仪', '安全带', '摄像头'].map((label, idx) => (
+                        {['安全帽', '气体检测仪', '移动摄像头'].map((label, idx) => (
                           <div key={`hw-${idx}`} className="flex items-center gap-1 px-1.5 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded hover:border-blue-500/40 transition-all cursor-pointer whitespace-nowrap group">
                              <Tag size={8} className="text-emerald-500"/>
                              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{label}</span>
@@ -482,7 +625,7 @@ export const DashboardView: React.FC = () => {
                         <span className="text-[12px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-tighter">AI算法</span>
                      </div>
                      <div className="flex-1 flex items-center gap-1.5 px-2 overflow-x-auto no-scrollbar">
-                        {['倒地检测', '违章识别', '自动预警'].map((label, idx) => (
+                        {['人员跌倒', '人员越界', '违规抽烟', '未佩戴安全帽', '烟火检测'].map((label, idx) => (
                           <div key={`ai-${idx}`} className="flex items-center gap-1 px-1.5 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded hover:border-red-500/40 transition-all cursor-pointer whitespace-nowrap group">
                              <Zap size={8} className="text-red-500"/>
                              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{label}</span>
@@ -506,11 +649,19 @@ export const DashboardView: React.FC = () => {
                            <span className="text-white font-black text-[11px] [writing-mode:vertical-lr] tracking-[0.05em]">作业前</span>
                         </div>
                         <div className="flex gap-2.5 p-2 px-3 border border-dashed border-purple-100 dark:border-purple-900/40 rounded-2xl bg-purple-50/5 transition-all">
-                           {['作业许可', '人员培训', '风险演练', '安全管理文件'].map(label => (
-                              <div key={label} className="w-14 h-14 rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-xl flex items-center justify-center text-center p-1 hover:scale-110 transition-transform cursor-default shrink-0 group">
-                                 <span className="text-[10px] font-black text-purple-600 leading-tight group-hover:text-purple-500 transition-colors">{label}</span>
-                              </div>
-                           ))}
+                           {['作业许可', '人员培训', '风险演练', '安全管理文件'].map(label => {
+                              const isStatic = label === '作业许可';
+                              return (
+                                <div 
+                                  key={label} 
+                                  onClick={() => !isStatic && setActiveNode(label)}
+                                  className={`w-14 h-14 rounded-full border shadow-xl flex items-center justify-center text-center p-1 shrink-0 transition-all group relative ${isStatic ? 'cursor-default opacity-80 grayscale-[0.2]' : 'cursor-pointer hover:scale-110'} ${activeNode === label ? 'bg-purple-600 border-purple-600 scale-110 shadow-purple-500/40' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}
+                                >
+                                   <span className={`text-[10px] font-black leading-tight transition-colors ${activeNode === label ? 'text-white' : 'text-purple-600 group-hover:text-purple-500'}`}>{label}</span>
+                                   {!isStatic && activeNode === label && <motion.div layoutId="node-glow" className="absolute inset-0 rounded-full bg-purple-400/20 animate-pulse" />}
+                                </div>
+                              );
+                           })}
                         </div>
                      </div>
 
@@ -522,13 +673,16 @@ export const DashboardView: React.FC = () => {
                            <span className="text-white font-black text-[11px] [writing-mode:vertical-lr] tracking-[0.05em]">作业中</span>
                         </div>
                         <div className="relative flex items-center gap-4 justify-center px-3 p-2 border border-dashed border-blue-100 dark:border-blue-900/40 rounded-2xl bg-blue-50/5">
-                           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex flex-col items-center justify-center text-white shadow-xl shadow-blue-500/40 border-2 border-white dark:border-slate-800 text-center p-1 relative z-10 group hover:scale-110 transition-transform">
+                           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex flex-col items-center justify-center text-white shadow-xl shadow-blue-500/40 border-2 border-white dark:border-slate-800 text-center p-1 relative z-10 group hover:scale-110 transition-transform cursor-pointer">
                               <Monitor size={16} />
                               <span className="text-[10px] font-black leading-tight mt-1">智能监控</span>
                            </div>
-                           <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-full flex flex-col items-center justify-center text-blue-600 dark:text-blue-400 shadow-xl border-2 border-blue-50 dark:border-blue-900/30 text-center p-1 relative z-10 group hover:scale-110 transition-transform">
+                           <div 
+                             onClick={() => setActiveNode('管理人员到岗签到')}
+                             className={`w-16 h-16 rounded-full flex flex-col items-center justify-center shadow-xl border-2 text-center p-1 relative z-10 cursor-pointer transition-all group ${activeNode === '管理人员到岗签到' ? 'bg-blue-600 border-blue-600 scale-110 text-white shadow-blue-500/40' : 'bg-white dark:bg-slate-800 border-blue-50 dark:border-blue-900/30 text-blue-600 dark:text-blue-400 hover:scale-110'}`}
+                           >
                               <User size={16} />
-                              <span className="text-[8px] font-black leading-tight mt-1">管理人员到岗签到</span>
+                              <span className={`text-[8px] font-black leading-tight mt-1 ${activeNode === '管理人员到岗签到' ? 'text-white' : ''}`}>管理人员到岗签到</span>
                            </div>
                         </div>
                      </div>
@@ -536,138 +690,173 @@ export const DashboardView: React.FC = () => {
                      <div className="w-8 h-0.5 bg-gradient-to-r from-blue-100 to-emerald-100 dark:from-blue-900/30 dark:to-emerald-900/30 shrink-0" />
 
                      {/* Step 3: After Job */}
-                     <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3">
                         <div className="w-10 h-16 bg-[#10b981] rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 relative z-10 shrink-0">
                            <span className="text-white font-black text-[11px] [writing-mode:vertical-lr] tracking-[0.05em]">作业后</span>
                         </div>
                         <div className="flex gap-2.5 p-2 px-3 border border-dashed border-emerald-100 dark:border-emerald-900/40 rounded-2xl bg-emerald-50/5">
-                           {['作业结束', '反违章报告'].map(label => (
-                              <div key={label} className="w-14 h-14 rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-xl flex items-center justify-center text-center p-1 hover:scale-110 transition-transform cursor-default shrink-0 group">
-                                 <span className="text-[10px] font-black text-emerald-600 leading-tight group-hover:text-emerald-500 transition-colors">{label}</span>
-                              </div>
-                           ))}
+                           {['作业结束', '反违章报告'].map(label => {
+                              const isStatic = label === '作业结束';
+                              return (
+                                <div 
+                                  key={label} 
+                                  onClick={() => !isStatic && setActiveNode(label)}
+                                  className={`w-14 h-14 rounded-full border shadow-xl flex items-center justify-center text-center p-1 shrink-0 transition-all group relative ${isStatic ? 'cursor-default opacity-80 grayscale-[0.2]' : 'cursor-pointer hover:scale-110'} ${activeNode === label ? 'bg-emerald-600 border-emerald-600 scale-110 shadow-emerald-500/40' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}
+                                >
+                                   <span className={`text-[10px] font-black leading-tight transition-colors ${activeNode === label ? 'text-white' : 'text-emerald-600 group-hover:text-emerald-500'}`}>{label}</span>
+                                </div>
+                              );
+                           })}
                         </div>
                      </div>
                   </div>
                </div>
 
                {/* Bottom Panels: Node Monitoring & Alarms/Gas */}
-               <div className="grid grid-cols-12 gap-3 pb-1 flex-1 min-h-0">
+               <div className="grid grid-cols-12 gap-4 pb-4 shrink-0">
                   {/* Left Column: Node Monitoring */}
-                  <div className="col-span-12 lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-sm transition-colors flex flex-col overflow-hidden">
-                     <div className="flex items-center justify-between mb-2 shrink-0">
-                        <div className="flex items-center gap-1">
-                           <LayoutDashboard size={12} className="text-orange-500" />
-                           <h3 className="text-[11px] font-black text-slate-800 dark:text-white uppercase tracking-tight">节点详情</h3>
+                  <div className="col-span-12 lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm transition-colors flex flex-col overflow-hidden h-[320px]">
+                     <div className="flex items-center justify-between mb-4 shrink-0">
+                        <div className="flex items-center gap-2">
+                           <div className="p-1.5 bg-orange-100 dark:bg-orange-900/20 text-orange-600 rounded-lg">
+                              <LayoutDashboard size={14} />
+                           </div>
+                           <h3 className="text-[14px] font-black text-slate-800 dark:text-white uppercase tracking-tight">
+                              节点详情 {activeNode && <span className="text-blue-500 ml-1">· {activeNode}</span>}
+                           </h3>
                         </div>
-                        <div className="px-1 px-0.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[7px] text-slate-400 font-bold">
-                           CORE
+                        <div className="px-2 py-0.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[8px] text-slate-400 font-bold uppercase tracking-widest shadow-sm">
+                           NODE_STATUS
                         </div>
                      </div>
-
-                     <div className="flex-1 grid grid-cols-2 gap-x-2 gap-y-1.5 overflow-hidden">
-                        {[
-                           { t: '实时监控', d: 'AI引擎运行中', icon: CheckCircle2, color: 'text-emerald-500' },
-                           { t: '监护到岗', d: '传感器验证通过', icon: CheckCircle2, color: 'text-emerald-500' },
-                           { t: '气体监测', d: '数据回传正常', icon: CheckCircle2, color: 'text-emerald-500' },
-                           { t: '违章识别', d: '全量算法加载', icon: CheckCircle2, color: 'text-emerald-500' },
-                        ].map((item, idx) => (
-                           <div key={`node-${idx}`} className="flex items-center gap-1.5 border-b border-slate-50 dark:border-slate-800/50 pb-1">
-                              <div className={`p-0.5 rounded-full ${item.color} bg-opacity-10 shrink-0`}>
-                                 <item.icon size={8} className={item.color} />
-                              </div>
-                              <div className="min-w-0">
-                                 <h4 className="text-[9px] font-black text-slate-800 dark:text-slate-200 truncate leading-none">{item.t}</h4>
-                                 <p className="text-[7px] text-slate-400 dark:text-slate-500 font-medium truncate mt-0.5">{item.d}</p>
-                              </div>
-                           </div>
-                        ))}
+                     
+                     <div className="flex-1 overflow-y-auto no-scrollbar">
+                        {renderNodeDetailContent()}
                      </div>
                   </div>
 
                   {/* Right Column: Tab Switcher (Alarms / Gas) */}
-                  <div className="col-span-12 lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-sm transition-colors flex flex-col overflow-hidden">
+                  <div className="col-span-12 lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm transition-colors flex flex-col overflow-hidden h-[320px]">
                      <div className="flex items-center gap-3 mb-1.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
-                        <button 
-                          onClick={() => setActiveBottomTab('alarm')}
-                          className={`flex items-center gap-1 pb-1 transition-all relative ${activeBottomTab === 'alarm' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                           <Bell size={10} className={activeBottomTab === 'alarm' ? 'text-blue-600' : 'text-slate-400'} />
-                           <h3 className="text-[11px] font-black uppercase tracking-tight">告警</h3>
-                           {activeBottomTab === 'alarm' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />}
-                        </button>
                         <button 
                           onClick={() => setActiveBottomTab('gas')}
                           className={`flex items-center gap-1 pb-1 transition-all relative ${activeBottomTab === 'gas' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
                         >
                            <Activity size={10} className={activeBottomTab === 'gas' ? 'text-blue-600' : 'text-slate-400'} />
-                           <h3 className="text-[11px] font-black uppercase tracking-tight">气体</h3>
+                           <h3 className="text-[14px] font-black uppercase tracking-tight">气体检测</h3>
                            {activeBottomTab === 'gas' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />}
+                        </button>
+                        <button 
+                          onClick={() => setActiveBottomTab('alarm')}
+                          className={`flex items-center gap-1 pb-1 transition-all relative ${activeBottomTab === 'alarm' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                           <Bell size={10} className={activeBottomTab === 'alarm' ? 'text-blue-600' : 'text-slate-400'} />
+                           <h3 className="text-[14px] font-black uppercase tracking-tight">告警检测</h3>
+                           {activeBottomTab === 'alarm' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />}
                         </button>
                      </div>
 
                      <div className="flex-1 overflow-hidden">
                         <AnimatePresence mode="wait">
-                           {activeBottomTab === 'alarm' ? (
-                              <motion.div 
-                                 key="alarms"
-                                 initial={{ opacity: 0, scale: 0.98 }}
-                                 animate={{ opacity: 1, scale: 1 }}
-                                 exit={{ opacity: 0, scale: 0.98 }}
-                                 className="grid grid-cols-1 gap-1"
-                              >
-                                {[{ t: '违规入侵', time: '12:23', type: '异常', img: 'https://images.unsplash.com/photo-1542060717-d670f55cf55d?w=100' },
-                                  { t: '安全帽', time: '12:45', type: '异常', img: 'https://images.unsplash.com/photo-1579309196904-11d619d02a3a?w=100' },
-                                  { t: '气体超标', time: '13:05', type: '预警', img: 'https://images.unsplash.com/photo-1517089591965-c96301389474?w=100' }
-                                 ].map((alarm, idx) => (
-                                   <div key={`alarm-${idx}`} className="flex items-center justify-between p-1 bg-slate-50/50 dark:bg-slate-800/30 rounded-lg border border-slate-100 dark:border-slate-800 transition-all hover:bg-white dark:hover:bg-slate-800 group">
-                                      <div className="flex items-center gap-2">
-                                         <div className="w-7 h-5 rounded border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0">
-                                            <img src={alarm.img} className="w-full h-full object-cover" alt="alarm" />
-                                         </div>
-                                         <div className="min-w-0">
-                                            <h4 className="text-[9px] font-black text-slate-800 dark:text-slate-100 leading-none truncate">{alarm.t}</h4>
-                                            <span className="text-[7px] text-slate-400 font-bold inline-block mt-0.5">{alarm.time}</span>
-                                         </div>
-                                      </div>
-                                      <span className={`px-1 py-0 px-0.5 rounded text-[7px] font-black ${alarm.type === '异常' ? 'bg-red-100 text-red-500' : 'bg-orange-100 text-orange-500'}`}>
-                                         {alarm.type}
-                                      </span>
-                                   </div>
-                                 ))}
-                              </motion.div>
-                           ) : (
+                           {activeBottomTab === 'gas' ? (
                               <motion.div 
                                  key="gas"
                                  initial={{ opacity: 0, scale: 0.98 }}
                                  animate={{ opacity: 1, scale: 1 }}
                                  exit={{ opacity: 0, scale: 0.98 }}
-                                 className="grid grid-cols-2 gap-2 h-full"
+                                 className="flex flex-col gap-3 h-full overflow-hidden"
                               >
-                                 {[
-                                   { label: 'CH4', val: '0.05', unit: '%LEL', color: '#10b981', dataKey: 'ch4' },
-                                   { label: 'H2S', val: '0.12', unit: 'ppm', color: '#3b82f6', dataKey: 'h2s' }
-                                 ].map((gas) => (
-                                    <div key={`gas-${gas.label}`} className="bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-1 border border-slate-100/50 dark:border-slate-800 flex flex-col h-full">
-                                       <div className="flex justify-between items-baseline mb-0.5">
-                                         <p className="text-[7px] font-bold text-slate-400">{gas.label}</p>
-                                         <span className="text-[8px] font-black" style={{ color: gas.color }}>{gas.val}</span>
+                                 {/* 4-Block Gas Grid */}
+                                 <div className="grid grid-cols-4 gap-2 shrink-0">
+                                    {[
+                                       { name: '甲烷', val: 25, unit: '0-100%LEL', bg: 'bg-rose-50 dark:bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-100 dark:border-rose-900/30' },
+                                       { name: '硫化氢', val: 20, unit: '0-100PPM', bg: 'bg-rose-50 dark:bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-100 dark:border-rose-900/30' },
+                                       { name: '一氧化碳', val: 18, unit: '0-100PPM', bg: 'bg-sky-50 dark:bg-sky-500/10', text: 'text-sky-600 dark:text-sky-400', border: 'border-sky-100 dark:border-sky-900/30' },
+                                       { name: '氧气', val: 20, unit: '0-30%VOL', bg: 'bg-sky-50 dark:bg-sky-500/10', text: 'text-sky-600 dark:text-sky-400', border: 'border-sky-100 dark:border-sky-900/30' },
+                                    ].map((item, idx) => (
+                                       <div key={idx} className={`${item.bg} ${item.border} rounded-xl p-2 flex flex-col justify-center items-center h-[72px] shadow-sm border`}>
+                                          <span className={`text-[10px] font-black opacity-80 uppercase tracking-wider ${item.text}`}>{item.name}</span>
+                                          <span className={`text-[20px] font-black leading-none my-1 ${item.text}`}>{item.val}</span>
+                                          <span className={`text-[7px] font-bold opacity-60 truncate w-full text-center ${item.text}`}>{item.unit}</span>
                                        </div>
-                                       <div className="flex-1 w-full min-h-[25px]">
-                                         <ResponsiveContainer width="100%" height="100%">
-                                           <AreaChart data={MOCK_GAS_DATA}>
-                                             <Area 
-                                               type="monotone" 
-                                               dataKey={gas.dataKey} 
-                                               stroke={gas.color} 
-                                               fill={`${gas.color}33`}
-                                               strokeWidth={1}
-                                               isAnimationActive={false}
-                                             />
-                                           </AreaChart>
-                                         </ResponsiveContainer>
+                                    ))}
+                                 </div>
+
+                                 {/* Trend Chart Area */}
+                                 <div className="flex-1 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800 p-2 flex flex-col overflow-hidden">
+                                    <div className="flex items-center justify-between mb-1.5 px-1">
+                                       <h4 className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight flex items-center gap-1.5">
+                                          <div className="w-1 h-3 bg-blue-500 rounded-full" />
+                                          趋势分析 (Trend Analysis)
+                                       </h4>
+                                       <div className="flex gap-2">
+                                          {['甲烷', '硫化氢', '一氧化碳', '氧气'].map((label, idx) => (
+                                             <div key={label} className="flex items-center gap-1">
+                                                <div className={`w-1.5 h-1.5 rounded-full ${['bg-red-500', 'bg-emerald-500', 'bg-yellow-500', 'bg-blue-500'][idx]}`} />
+                                                <span className="text-[7px] text-slate-400 font-bold uppercase">{label}</span>
+                                             </div>
+                                          ))}
                                        </div>
                                     </div>
+                                    <div className="flex-1 w-full">
+                                       <ResponsiveContainer width="100%" height="100%">
+                                          <LineChart data={GAS_TREND_DATA} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
+                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.1)" />
+                                             <XAxis 
+                                                dataKey="time" 
+                                                axisLine={false} 
+                                                tickLine={false} 
+                                                tick={{ fontSize: 7, fontWeight: 700, fill: '#64748b' }} 
+                                             />
+                                             <YAxis 
+                                                axisLine={false} 
+                                                tickLine={false} 
+                                                tick={{ fontSize: 7, fontWeight: 700, fill: '#64748b' }} 
+                                             />
+                                             <Tooltip 
+                                                contentStyle={{ 
+                                                   backgroundColor: 'rgba(15, 23, 42, 0.9)', 
+                                                   border: 'none', 
+                                                   borderRadius: '8px',
+                                                   fontSize: '9px',
+                                                   color: '#fff'
+                                                }}
+                                             />
+                                             <Line type="monotone" dataKey="ch4" stroke="#ef4444" strokeWidth={2} dot={false} activeDot={{ r: 4 }} isAnimationActive={false}/>
+                                             <Line type="monotone" dataKey="h2s" stroke="#10b981" strokeWidth={2} dot={false} activeDot={{ r: 4 }} isAnimationActive={false}/>
+                                             <Line type="monotone" dataKey="co" stroke="#f59e0b" strokeWidth={2} dot={false} activeDot={{ r: 4 }} isAnimationActive={false}/>
+                                             <Line type="monotone" dataKey="o2" stroke="#3b82f6" strokeWidth={2} dot={false} activeDot={{ r: 4 }} isAnimationActive={false}/>
+                                          </LineChart>
+                                       </ResponsiveContainer>
+                                    </div>
+                                 </div>
+                              </motion.div>
+                           ) : (
+                              <motion.div 
+                                 key="alarm"
+                                 initial={{ opacity: 0, scale: 0.98 }}
+                                 animate={{ opacity: 1, scale: 1 }}
+                                 exit={{ opacity: 0, scale: 0.98 }}
+                                 className="grid grid-cols-1 gap-2 h-full overflow-y-auto no-scrollbar"
+                              >
+                                {[{ t: '违规入侵', time: '12:23', type: '异常', img: 'https://images.unsplash.com/photo-1542060717-d670f55cf55d?w=100' },
+                                  { t: '安全帽违规', time: '12:45', type: '异常', img: 'https://images.unsplash.com/photo-1579309196904-11d619d02a3a?w=100' },
+                                  { t: '有害气体超标', time: '13:05', type: '预警', img: 'https://images.unsplash.com/photo-1517089591965-c96301389474?w=100' }
+                                 ].map((alarm, idx) => (
+                                   <div key={`alarm-${idx}`} className="flex items-center justify-between p-2 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-100 dark:border-slate-800 transition-all hover:bg-white dark:hover:bg-slate-800 group">
+                                      <div className="flex items-center gap-3">
+                                         <div className="w-10 h-7 rounded border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 shadow-sm">
+                                            <img src={alarm.img} className="w-full h-full object-cover" alt="alarm" />
+                                         </div>
+                                         <div className="min-w-0">
+                                            <h4 className="text-[10px] font-black text-slate-800 dark:text-slate-100 leading-none truncate mb-1">{alarm.t}</h4>
+                                            <span className="text-[8px] text-slate-400 font-bold inline-block">{alarm.time}</span>
+                                         </div>
+                                      </div>
+                                      <span className={`px-2 py-0.5 rounded text-[8px] font-black ${alarm.type === '异常' ? 'bg-red-100 text-red-500' : 'bg-orange-100 text-orange-500'}`}>
+                                         {alarm.type}
+                                      </span>
+                                   </div>
                                  ))}
                               </motion.div>
                            )}
